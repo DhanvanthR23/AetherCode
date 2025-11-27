@@ -188,6 +188,9 @@ class AppWindow(ctk.CTk):
         
         open_button = ctk.CTkButton(self.file_menu, text="Open (Ctrl+O)", corner_radius=0, command=self._open_file)
         open_button.pack(fill="x")
+
+        open_folder_button = ctk.CTkButton(self.file_menu, text="Open Folder", corner_radius=0, command=self._open_folder)
+        open_folder_button.pack(fill="x")
         
         save_button = ctk.CTkButton(self.file_menu, text="Save (Ctrl+S)", corner_radius=0, command=self._save_file)
         save_button.pack(fill="x")
@@ -260,6 +263,7 @@ class AppWindow(ctk.CTk):
         self.file_menu.place_forget()
         self.edit_menu.place_forget()
         self.run_menu.place_forget()
+
 
     def _new_file(self, event=None):
         untitled_count = 1
@@ -468,9 +472,18 @@ class AppWindow(ctk.CTk):
             self.output_console.configure(state="disabled")
 
     def _open_file(self, event=None):
+        self.unbind_all("<Button-1>")
         file_path = filedialog.askopenfilename()
+        self.bind_all("<Button-1>", self._hide_menus)
         if file_path:
             self._on_file_click(file_path)
+
+    def _open_folder(self, event=None):
+        self.unbind_all("<Button-1>")
+        folder_path = filedialog.askdirectory()
+        self.bind_all("<Button-1>", self._hide_menus)
+        if folder_path:
+            self._populate_file_explorer(folder_path)
 
 
     def _run_code(self):

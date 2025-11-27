@@ -24,6 +24,7 @@ The application is designed with a clear separation of concerns, making it modul
 *   **Tabbed Interface:** Allows editing multiple files at once.
 *   **File Explorer Context Menu:** Right-click context menus for creating, renaming, and deleting files and folders.
 *   **Save and Save As:** Functionality to save files with keyboard shortcuts (Ctrl+S and Ctrl+Shift+S).
+*   **Open Folder Functionality:** Open and manage entire folders as projects.
 
 ### Architecture:
 *   **`main.py`:** The main entry point that initializes and runs the application.
