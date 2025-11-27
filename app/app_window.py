@@ -15,7 +15,7 @@ class AppWindow(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("Gemini Code Editor")
+        self.title("AetherCode")
         self.geometry("1400x900")
         
         # --- Theme ---
@@ -299,7 +299,7 @@ class AppWindow(ctk.CTk):
             try:
                 with open(file_path, "w", encoding="utf-8") as f:
                     f.write(editor.get("1.0", "end-1c"))
-                self.title(f"Gemini Code Editor - {os.path.basename(file_path)}")
+                self.title(f"AetherCode - {os.path.basename(file_path)}")
             except Exception as e:
                 self.output_console.configure(state="normal")
                 self.output_console.delete("1.0", "end")
@@ -350,7 +350,7 @@ class AppWindow(ctk.CTk):
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(content)
             
-            self.title(f"Gemini Code Editor - {new_tab_name}")
+            self.title(f"AetherCode - {new_tab_name}")
             
         except Exception as e:
             self.output_console.configure(state="normal")
@@ -460,7 +460,7 @@ class AppWindow(ctk.CTk):
             editor = self._add_tab(new_tab_name, file_path=path)
             editor.insert("1.0", content)
             self.tab_view.set(new_tab_name)
-            self.title(f"Gemini Code Editor - {new_tab_name}")
+            self.title(f"AetherCode - {new_tab_name}")
         except Exception as e:
             self.output_console.configure(state="normal")
             self.output_console.delete("1.0", "end")
