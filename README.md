@@ -72,9 +72,28 @@ The application requires a Google Gemini API key to function.
     LLM_API_KEY="your-google-gemini-api-key"
     ```
 
+
+
 ### 4. Run the Application
+
 Once the dependencies are installed and the API key is configured, run the application from the project root directory:
 
+
+
 ```bash
+
 python main.py
+
 ```
+
+
+
+---
+
+
+
+## Known Bugs
+
+
+
+*   The mouse wheel scrolling does not work in the file explorer.

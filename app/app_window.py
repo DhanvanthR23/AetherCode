@@ -44,9 +44,8 @@ class AppWindow(ctk.CTk):
         self.grid_columnconfigure(2, weight=1)  # AI Panel
 
         # --- File Explorer ---
-        self.file_explorer_frame = ctk.CTkFrame(self, corner_radius=0, width=250, fg_color="#21222c")
+        self.file_explorer_frame = ctk.CTkScrollableFrame(self, corner_radius=0, width=250, fg_color="#21222c")
         self.file_explorer_frame.grid(row=1, column=0, sticky="nsew")
-        self.file_explorer_frame.grid_rowconfigure(1, weight=1)
         self.file_explorer_frame.grid_columnconfigure(0, weight=1)
         self.file_explorer_label = ctk.CTkLabel(self.file_explorer_frame, text="File Explorer", font=ctk.CTkFont(size=18, weight="bold"), text_color=self.dracula_theme["purple"])
         self.file_explorer_label.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
@@ -76,7 +75,7 @@ class AppWindow(ctk.CTk):
         self.output_frame.grid_columnconfigure(0, weight=1)
         self.output_label = ctk.CTkLabel(self.output_frame, text="Output", font=ctk.CTkFont(size=16, weight="bold"), text_color=self.dracula_theme["cyan"])
         self.output_label.grid(row=0, column=0, padx=10, pady=5, sticky="ew")
-        self.output_console = ctk.CTkTextbox(self.output_frame, wrap="word", state="disabled", font=("monospace", 13), fg_color="#282a36", text_color=self.dracula_theme["foreground"])
+        self.output_console = ctk.CTkTextbox(self.output_frame, wrap="none", state="disabled", font=("monospace", 13), fg_color="#282a36", text_color=self.dracula_theme["foreground"])
         self.output_console.grid(row=1, column=0, padx=10, pady=(0, 10), sticky="nsew")
 
         # --- AI Controls ---
@@ -101,7 +100,7 @@ class AppWindow(ctk.CTk):
         self.submit_button.grid(row=5, column=0, padx=10, pady=20, sticky="ew")
         self.mentor_output_label = ctk.CTkLabel(self.controls_frame, text="Mentor Output", font=ctk.CTkFont(size=16, weight="bold"), text_color=self.dracula_theme["yellow"])
         self.mentor_output_label.grid(row=6, column=0, padx=10, pady=5, sticky="nw")
-        self.mentor_output = ctk.CTkTextbox(self.controls_frame, wrap="word", state="disabled", fg_color=self.dracula_theme["current_line"])
+        self.mentor_output = ctk.CTkTextbox(self.controls_frame, wrap="none", state="disabled", fg_color=self.dracula_theme["current_line"])
         self.mentor_output.grid(row=7, column=0, sticky="nsew", padx=10, pady=(0,10))
         self.ai_service = AIService()
         self._setup_menubar()
@@ -383,22 +382,18 @@ class AppWindow(ctk.CTk):
                 if widget != self.file_explorer_label:
                     widget.destroy()
 
-            for i in range(self.file_explorer_frame.grid_size()[1]):
-                self.file_explorer_frame.grid_rowconfigure(i, weight=0)
-            
             self.current_dir = directory
             self.file_explorer_label.configure(text=f"Explorer: {os.path.basename(directory)}")
-            self.file_explorer_frame.grid_rowconfigure(0, weight=0)
 
             parent_dir = os.path.dirname(directory)
             row_index = 1
             if parent_dir != directory:
-                parent_label = ctk.CTkLabel(self.file_explorer_frame, text=".. (Parent)", text_color="cyan", cursor="hand2")
-                parent_label.grid(row=1, column=0, padx=10, pady=2, sticky="ew")
+                parent_label = ctk.CTkLabel(self.file_explorer_frame, text=".. (Parent)", text_color="cyan", cursor="hand2", anchor="w")
+                parent_label.grid(row=row_index, column=0, padx=10, pady=2, sticky="ew")
                 parent_label.bind("<Button-1>", lambda e, p=parent_dir: self._on_directory_click(p))
                 parent_label.bind("<Button-3>", lambda e, p=parent_dir: self._show_context_menu(e, p))
-                self.file_explorer_frame.grid_rowconfigure(1, weight=0)
-                row_index = 2
+                parent_label.bind("<MouseWheel>", self._scroll_file_explorer)
+                row_index += 1
 
             items = sorted(os.listdir(directory))
             dirs = [item for item in items if os.path.isdir(os.path.join(directory, item))]
@@ -406,24 +401,21 @@ class AppWindow(ctk.CTk):
 
             for item in dirs:
                 path = os.path.join(directory, item)
-                label = ctk.CTkLabel(self.file_explorer_frame, text=f"📁 {item}", cursor="hand2")
+                label = ctk.CTkLabel(self.file_explorer_frame, text=f"📁 {item}", cursor="hand2", anchor="w")
                 label.grid(row=row_index, column=0, padx=10, pady=2, sticky="ew")
                 label.bind("<Button-1>", lambda e, p=path: self._on_directory_click(p))
                 label.bind("<Button-3>", lambda e, p=path: self._show_context_menu(e, p))
-                self.file_explorer_frame.grid_rowconfigure(row_index, weight=0)
+                label.bind("<MouseWheel>", self._scroll_file_explorer)
                 row_index += 1
 
             for item in files:
                 path = os.path.join(directory, item)
-                label = ctk.CTkLabel(self.file_explorer_frame, text=f"📄 {item}", cursor="hand2")
+                label = ctk.CTkLabel(self.file_explorer_frame, text=f"📄 {item}", cursor="hand2", anchor="w")
                 label.grid(row=row_index, column=0, padx=10, pady=2, sticky="ew")
                 label.bind("<Button-1>", lambda e, p=path: self._on_file_click(p))
                 label.bind("<Button-3>", lambda e, p=path: self._show_context_menu(e, p))
-                self.file_explorer_frame.grid_rowconfigure(row_index, weight=0)
+                label.bind("<MouseWheel>", self._scroll_file_explorer)
                 row_index += 1
-            
-            if row_index > 0:
-                self.file_explorer_frame.grid_rowconfigure(row_index, weight=1)
 
         except Exception as e:
             self.output_console.configure(state="normal")
@@ -445,6 +437,9 @@ class AppWindow(ctk.CTk):
                     if isinstance(child, CodeEditor):
                         return child
         return None
+
+    def _scroll_file_explorer(self, event):
+        self.file_explorer_frame._canvas.yview_scroll(int(-1*(event.delta/120)), "units")
 
     def _on_directory_click(self, path):
         self._populate_file_explorer(path)
