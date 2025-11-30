@@ -2,13 +2,13 @@
 
 ## Project Overview
 
-This project is a native desktop AI-powered code editor for Python, built using Python's `customtkinter` library for the graphical user interface. It provides AI-assisted coding through a connection to the Google Gemini API.
+This project is a native desktop AI-powered code editor for Python, built using Python's `PyQt6` library for the graphical user interface. It provides AI-assisted coding through a connection to the Google Gemini API.
 
 The application is designed with a clear separation of concerns, making it modular and extensible.
 
 ### Key Technologies:
 *   **Language:** Python 3
-*   **GUI:** `customtkinter`
+*   **GUI:** `PyQt6`
 *   **Syntax Highlighting:** `pygments`
 *   **AI Integration:** `google-generativeai` (for Google Gemini)
 *   **Environment Management:** `python-dotenv`
@@ -16,24 +16,20 @@ The application is designed with a clear separation of concerns, making it modul
 ### Core Features:
 *   **Full-fledged Code Editor:** A custom code editor widget with real-time Python syntax highlighting.
 *   **File Explorer:** A file explorer to browse and open files.
-*   **Resizable Panes:** UI elements can be resized using sashes.
+*   **Resizable Panes:** UI elements can be resized.
 *   **AI Assistant Modes:**
     *   **Generator Mode:** Directly generates Python code based on a user's prompt.
     *   **Mentor Mode:** Provides Socratic, question-based guidance to help the user solve problems themselves.
 *   **Code Execution:** A "Run" button to execute the code written in the editor and display the `stdout` and `stderr` in an output console.
 *   **Tabbed Interface:** Allows editing multiple files at once.
-*   **File Explorer Context Menu:** Right-click context menus for creating, renaming, and deleting files and folders.
-*   **Save and Save As:** Functionality to save files with keyboard shortcuts (Ctrl+S and Ctrl+Shift+S).
-*   **Open Folder Functionality:** Open and manage entire folders as projects.
+*   **File Management:** Open, Save, and Save As functionality with keyboard shortcuts.
+*   **Project Management:** Open and manage entire folders as projects.
 
 ### Architecture:
-*   **`main.py`:** The main entry point that initializes and runs the application.
-*   **`app/app_window.py`:** Defines the main application window, orchestrates all UI components (editor, buttons, output panes), and handles user interactions.
-*   **`app/code_editor.py`:** A custom `CTkFrame` widget that encapsulates the `CTkTextbox` and all logic for syntax highlighting using the `pygments` library.
+*   **`main.py`:** The main entry point that initializes the QApplication and runs the PyQt6 application.
+*   **`qt_ui/qt_app_window.py`:** Defines the main `QMainWindow`, orchestrates all UI components (editor, panels, menu), and handles user interactions using PyQt6.
+*   **`qt_ui/qt_code_editor.py`:** Encapsulates the `QsciScintilla` widget and handles code editor features like syntax highlighting and line numbers.
 *   **`app/ai_service.py`:** A dedicated service class that manages all interactions with the Google Gemini API, including prompt construction for the different AI modes.
-*   **`app/sash.py`:** A custom widget to allow resizing of UI panes.
-*   **`app/custom_tab.py`:** Defines a custom tab with a close button.
-*   **`app/file_explorer_context_menu.py`:** Implements the right-click context menu for the file explorer.
 
 ---
 
@@ -88,12 +84,4 @@ python main.py
 
 
 
----
 
-
-
-## Known Bugs
-
-
-
-*   The mouse wheel scrolling does not work in the file explorer.
