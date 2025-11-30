@@ -385,6 +385,9 @@ class AppWindow(ctk.CTk):
             self.current_dir = directory
             self.file_explorer_label.configure(text=f"Explorer: {os.path.basename(directory)}")
 
+            # Bind mousewheel to the entire file explorer frame and its children
+            self._bind_mousewheel(self.file_explorer_frame)
+
             parent_dir = os.path.dirname(directory)
             row_index = 1
             if parent_dir != directory:
@@ -392,7 +395,6 @@ class AppWindow(ctk.CTk):
                 parent_label.grid(row=row_index, column=0, padx=10, pady=2, sticky="ew")
                 parent_label.bind("<Button-1>", lambda e, p=parent_dir: self._on_directory_click(p))
                 parent_label.bind("<Button-3>", lambda e, p=parent_dir: self._show_context_menu(e, p))
-                parent_label.bind("<MouseWheel>", self._scroll_file_explorer)
                 row_index += 1
 
             items = sorted(os.listdir(directory))
@@ -405,7 +407,6 @@ class AppWindow(ctk.CTk):
                 label.grid(row=row_index, column=0, padx=10, pady=2, sticky="ew")
                 label.bind("<Button-1>", lambda e, p=path: self._on_directory_click(p))
                 label.bind("<Button-3>", lambda e, p=path: self._show_context_menu(e, p))
-                label.bind("<MouseWheel>", self._scroll_file_explorer)
                 row_index += 1
 
             for item in files:
@@ -414,7 +415,6 @@ class AppWindow(ctk.CTk):
                 label.grid(row=row_index, column=0, padx=10, pady=2, sticky="ew")
                 label.bind("<Button-1>", lambda e, p=path: self._on_file_click(p))
                 label.bind("<Button-3>", lambda e, p=path: self._show_context_menu(e, p))
-                label.bind("<MouseWheel>", self._scroll_file_explorer)
                 row_index += 1
 
         except Exception as e:
@@ -438,8 +438,23 @@ class AppWindow(ctk.CTk):
                         return child
         return None
 
+    def _bind_mousewheel(self, widget):
+        widget.bind("<MouseWheel>", self._scroll_file_explorer, add=True)
+        widget.bind("<Button-4>", self._scroll_file_explorer, add=True)
+        widget.bind("<Button-5>", self._scroll_file_explorer, add=True)
+        for child in widget.winfo_children():
+            self._bind_mousewheel(child)
+
     def _scroll_file_explorer(self, event):
-        self.file_explorer_frame._canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        if hasattr(self.file_explorer_frame, "_parent_canvas"):
+            canvas = self.file_explorer_frame._parent_canvas
+            if sys.platform == "linux":
+                if event.num == 4:
+                    canvas.yview_scroll(-1, "units")
+                elif event.num == 5:
+                    canvas.yview_scroll(1, "units")
+            else:
+                canvas.yview_scroll(int(-1*(event.delta/120)), "units")
 
     def _on_directory_click(self, path):
         self._populate_file_explorer(path)

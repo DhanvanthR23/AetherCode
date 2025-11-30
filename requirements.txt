@@ -1,4 +1,5 @@
-customtkinter
-openai
 python-dotenv
-pygments
+PyQt6
+PyQt6-QScintilla
+openai
+google-generativeai
