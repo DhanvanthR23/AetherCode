@@ -46,4 +46,43 @@ class CodeEditor(QsciScintilla):
 
         # EOL
         self.setEolMode(QsciScintilla.EolMode.EolUnix)
-        self.setEolVisibility(False)
+        # self.setEolVisibility(False) # Commented out due to potential issue
+
+    def find_next_in_editor(self, search_text):
+        if not search_text:
+            return
+
+        found = self.findFirst(
+            search_text,
+            False,  # Regular expression
+            False,  # Case sensitive
+            False,  # Whole word
+            True,   # Wrap around
+            True,   # Forward
+            -1, -1  #-1,-1 for line and index to search from the beginning
+        )
+        if not found:
+            # If not found from the beginning, try from the current position
+            self.findFirst(
+                search_text,
+                False, False, False, True, True,
+                *self.getCursorPosition()
+            )
+
+    def replace_in_editor(self, search_text, replace_text):
+        if not search_text:
+            return
+
+        if self.hasSelectedText() and self.selectedText().lower() == search_text.lower():
+            self.replace(replace_text)
+        else:
+            self.find_next_in_editor(search_text)
+
+    def replace_all_in_editor(self, search_text, replace_text):
+        if not search_text:
+            return
+
+        self.beginUndoAction()
+        while self.findFirst(search_text, False, False, False, False, True, -1, -1):
+            self.replace(replace_text)
+        self.endUndoAction()

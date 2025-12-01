@@ -8,6 +8,7 @@ from qt_ui.find_replace_panel import FindReplacePanel
 from qt_ui.terminal_panel import TerminalPanel
 from app.ai_service import AIService
 import os
+import subprocess
 
 class AppWindow(QMainWindow):
     def __init__(self):
@@ -108,10 +109,10 @@ class AppWindow(QMainWindow):
         self.find_replace_dock.setWidget(self.find_replace_panel)
         self.find_replace_dock.hide()
 
-        self.find_replace_panel.find_next_button.clicked.connect(self.find_next)
-        self.find_replace_panel.find_in_project_button.clicked.connect(self.find_in_project)
-        self.find_replace_panel.replace_button.clicked.connect(self.replace_text)
-        self.find_replace_panel.replace_all_button.clicked.connect(self.replace_all_text)
+        self.find_replace_panel.find_next_requested.connect(self.find_next)
+        self.find_replace_panel.find_in_project_requested.connect(self.find_in_project)
+        self.find_replace_panel.replace_requested.connect(self.replace_text)
+        self.find_replace_panel.replace_all_requested.connect(self.replace_all_text)
 
         self.create_search_results_panel()
 
@@ -138,8 +139,7 @@ class AppWindow(QMainWindow):
         else:
             self.terminal_dock.show()
 
-    def find_in_project(self):
-        search_text = self.find_replace_panel.find_input.text()
+    def find_in_project(self, search_text):
         if not search_text:
             return
 
@@ -150,21 +150,36 @@ class AppWindow(QMainWindow):
         self.search_results_tree.setModel(model)
 
         root_path = self.fs_model.rootPath()
-        for dirpath, _, filenames in os.walk(root_path):
-            for filename in filenames:
-                # This is a simple implementation, you might want to add more filters
-                if filename.endswith(".py") or filename.endswith(".md"):
-                    filepath = os.path.join(dirpath, filename)
-                    try:
-                        with open(filepath, 'r') as f:
-                            for i, line in enumerate(f.readlines()):
-                                if search_text in line:
-                                    file_item = QStandardItem(filepath)
-                                    line_item = QStandardItem(str(i + 1))
-                                    content_item = QStandardItem(line.strip())
-                                    model.appendRow([file_item, line_item, content_item])
-                    except Exception as e:
-                        print(f"Could not read file {filepath}: {e}")
+        try:
+            # Use ripgrep for efficient searching
+            # -n: show line number
+            # -H: show file name
+            # --with-filename: always show filename
+            # --no-heading: don't group matches by file
+            # --line-buffered: print results as they are found
+            command = ["rg", "-n", "-H", "--with-filename", "--no-heading", "--line-buffered", search_text, root_path]
+            process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+            for line in process.stdout:
+                # ripgrep output format: "filename:line_number:match"
+                parts = line.strip().split(':', 2)
+                if len(parts) == 3:
+                    filepath = parts[0]
+                    line_number = parts[1]
+                    content = parts[2]
+                    file_item = QStandardItem(filepath)
+                    line_item = QStandardItem(line_number)
+                    content_item = QStandardItem(content)
+                    model.appendRow([file_item, line_item, content_item])
+            process.wait()
+            if process.returncode != 0 and process.returncode != 1: # 0 for success, 1 for no matches
+                stderr_output = process.stderr.read()
+                print(f"Error during ripgrep search: {stderr_output}")
+
+        except FileNotFoundError:
+            print("ripgrep (rg) not found. Please install it to use project-wide search.")
+        except Exception as e:
+            print(f"An error occurred during project search: {e}")
 
     def go_to_search_result(self, index):
         model = self.search_results_tree.model()
@@ -261,51 +276,16 @@ class AppWindow(QMainWindow):
         guidance = self.ai_service.get_socratic_guidance(prompt, code)
         self.ai_output_console.setText(guidance)
 
-    def find_next(self):
-        search_text = self.find_replace_panel.find_input.text()
-        if not search_text:
-            return
-
+    def find_next(self, search_text):
         current_editor = self.tab_widget.currentWidget()
         if isinstance(current_editor, CodeEditor):
-            found = current_editor.findFirst(
-                search_text,
-                False,  # Regular expression
-                False,  # Case sensitive
-                False,  # Whole word
-                True,   # Wrap around
-                True,   # Forward
-                -1, -1  #-1,-1 for line and index to search from the beginning
-            )
-            if not found:
-                # If not found from the beginning, try from the current position
-                 current_editor.findFirst(
-                    search_text,
-                    False, False, False, True, True,
-                    *current_editor.getCursorPosition()
-                )
-    def replace_text(self):
-        search_text = self.find_replace_panel.find_input.text()
-        replace_text = self.find_replace_panel.replace_input.text()
-        if not search_text:
-            return
-
-        current_editor = self.tab_widget.currentWidget()
-        if isinstance(current_editor, CodeEditor) and current_editor.hasSelectedText():
-            if current_editor.selectedText().lower() == search_text.lower():
-                current_editor.replace(replace_text)
-            else:
-                self.find_next()
-
-    def replace_all_text(self):
-        search_text = self.find_replace_panel.find_input.text()
-        replace_text = self.find_replace_panel.replace_input.text()
-        if not search_text:
-            return
-
+            current_editor.find_next_in_editor(search_text)
+    def replace_text(self, search_text, replace_text):
         current_editor = self.tab_widget.currentWidget()
         if isinstance(current_editor, CodeEditor):
-            current_editor.beginUndoAction()
-            while current_editor.findFirst(search_text, False, False, False, False, True, -1, -1):
-                current_editor.replace(replace_text)
-            current_editor.endUndoAction()
+            current_editor.replace_in_editor(search_text, replace_text)
+
+    def replace_all_text(self, search_text, replace_text):
+        current_editor = self.tab_widget.currentWidget()
+        if isinstance(current_editor, CodeEditor):
+            current_editor.replace_all_in_editor(search_text, replace_text)
