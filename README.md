@@ -2,13 +2,15 @@
 
 ## Project Overview
 
-This project is a native desktop AI-powered code editor for Python, built using Python's `PyQt6` library for the graphical user interface. It provides AI-assisted coding through a connection to the Google Gemini API.
+This project is a native desktop AI-powered code editor for Python, built using Python's `PyQt6` library for the graphical user interface. It provides AI-assisted coding through a connection to the Google Gemini API and features a modern dark theme provided by the `pyqtdarktheme` library.
 
 The application is designed with a clear separation of concerns, making it modular and extensible.
 
 ### Key Technologies:
 *   **Language:** Python 3
 *   **GUI:** `PyQt6`
+*   **Code Editor:** `PyQt6-QScintilla`
+*   **Theming:** `pyqtdarktheme`
 *   **Syntax Highlighting:** `pygments`
 *   **AI Integration:** `google-generativeai` (for Google Gemini)
 *   **Environment Management:** `python-dotenv`

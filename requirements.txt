@@ -3,3 +3,4 @@ PyQt6
 PyQt6-QScintilla
 openai
 google-generativeai
+pyqtdarktheme

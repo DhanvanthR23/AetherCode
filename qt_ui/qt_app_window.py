@@ -32,6 +32,7 @@ class AppWindow(QMainWindow):
 
         self.show()
 
+
     def create_menu_bar(self):
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu("File")

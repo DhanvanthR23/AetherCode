@@ -52,7 +52,7 @@
 **
 */
 
-Palette {
+/*Palette {
     /* Window colors */
     window: #2b2b2b;
     background: #44475a;
@@ -89,7 +89,7 @@ Palette {
     /* Color of the marker line in the chat view. BG Node that is overlayed on the first new ChatLine. */
     // 0 -> 0.1 (sharp line)
     marker-line: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #586e75, stop: 0.1 #586e75, stop: 0.1 transparent);
-}
+}*/
 
 /*
 ** Base Object Colors
@@ -109,7 +109,7 @@ QTreeView {
 }
 
 QTreeView::item {
-  border-left: 2px solid palette(base);
+  border-left: 2px solid #282a36;
 }
 
 QTreeView::item:focus {
@@ -119,24 +119,24 @@ QTreeView::item:focus {
 
 QTreeView::item:selected {
   border-width: 0 0 0 2px;
-  color: palette(button-text);
+  color: #f8f8f2;
 }
 
 QTreeView::item:hover {
-  background: palette(dark);
+  background: #202020;
 }
 
 
 QTreeView::item:selected:active{
-  color: palette(button-text);
-  background: palette(dark);
-  border-color: palette(highlight);
+  color: #f8f8f2;
+  background: #202020;
+  border-color: #44475a;
 }
 
 QTreeView::item:selected:!active {
-  color: palette(button-text);
-  background: palette(dark);
-  border-color: palette(highlight);
+  color: #f8f8f2;
+  background: #202020;
+  border-color: #44475a;
 }
 
 // QTreeView::item { color: #f1fa8c; }
@@ -148,7 +148,7 @@ QTreeView::item:selected:!active {
 /* From Quassel Wiki: http://sprunge.us/iZGB */
 QScrollBar {
     //background: transparent;
-    background: palette(base);
+    background: #282a36;
     margin: 0;
 }
 QScrollBar:hover {
@@ -166,8 +166,8 @@ QScrollBar::handle {
     padding: 0;
     margin: 2px;
     border-radius: 2px;
-    border: 2px solid palette(midlight);
-    background: palette(midlight);
+    border: 2px solid #333333;
+    background: #333333;
 }
 
 QScrollBar::handle:vertical {
@@ -180,12 +180,12 @@ QScrollBar::handle:horizontal {
     min-height: 0px;
 }
 QScrollBar::handle:hover {
-    border-color: palette(light);
-    background: palette(light);
+    border-color: #444444;
+    background: #444444;
 }
 QScrollBar::handle:pressed {
-    background: palette(highlight);
-    border-color: palette(highlight);
+    background: #44475a;
+    border-color: #44475a;
 }
 
 QScrollBar::add-line , QScrollBar::sub-line {
@@ -213,27 +213,27 @@ MultiLineEdit {
 //QMainWindow,
 QMainWindow QAbstractScrollArea {
     //border: 0; // Remove borders.
-    border: 1px solid palette(shadow);
+    border: 1px solid #1d1d1d;
 }
 
 QMainWindow {
-    //background: palette(mid); // Main window trim
+    background: red; 
 }
 
 /* Splitter */
 /* The splits between QDockWidgets and QMainWindow is a different element. */
 QSplitter::handle,
 QMainWindow::separator {
-	background: palette(dark);
+	background: #202020;
 }
 QSplitter::handle:horizontal:hover,
 QMainWindow::separator::vertical:hover {
-    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0 palette(window), stop: 0.5 palette(light), stop: 1 palette(window));
+    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0 #2b2b2b, stop: 0.5 #444444, stop: 1 #2b2b2b);
 }
 
 QSplitter::handle:vertical:hover,
 QMainWindow::separator::horizontal:hover {
-    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 palette(window), stop: 0.5 palette(light), stop: 1 palette(window));
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #2b2b2b, stop: 0.5 #444444, stop: 1 #2b2b2b);
 }
 
 /* Menu Bar / Context Menues */
@@ -244,10 +244,10 @@ QMenu {
 /* ToolTip */
 /* Note: You cannot create transparent sections in the popup box without a mask set. Thus the black edges outside the rounded borders. */
 QToolTip {
-    border: 2px solid #202020; // palette(dark)
+    border: 2px solid #202020; 
     border-radius: 2px;
-    background: #282a36; // palette(base)
-    color: white; // palette(text)
+    background: #282a36; 
+    color: white;
 }
 
 /* Tabs */
@@ -273,11 +273,11 @@ QTabBar::tab {
 }
 
 QTabBar::tab:bottom:selected {
-    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 palette(highlight), stop: 0.2 palette(highlight), stop: 0.2 transparent);
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #44475a, stop: 0.2 #44475a, stop: 0.2 transparent);
 }
 
 QTabBar::tab:top:selected {
-    background: qlineargradient(x1: 0, y1: 1, x2: 0, y2: 0, stop: 0 palette(highlight), stop: 0.2 palette(highlight), stop: 0.2 transparent);
+    background: qlineargradient(x1: 0, y1: 1, x2: 0, y2: 0, stop: 0 #44475a, stop: 0.2 #44475a, stop: 0.2 transparent);
 }
 
 QTabBar::tab:!selected {
@@ -285,11 +285,11 @@ QTabBar::tab:!selected {
 }
 
 QTabBar::tab:bottom:!selected {
-    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 palette(light), stop: 0.2 palette(light), stop: 0.2 transparent);
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #444444, stop: 0.2 #444444, stop: 0.2 transparent);
 }
 
 QTabBar::tab:top:!selected {
-    background: qlineargradient(x1: 0, y1: 1, x2: 0, y2: 0, stop: 0 palette(light), stop: 0.2 palette(light), stop: 0.2 transparent);
+    background: qlineargradient(x1: 0, y1: 1, x2: 0, y2: 0, stop: 0 #444444, stop: 0.2 #444444, stop: 0.2 transparent);
 }
 
 QTabBar::tab:!selected:hover {
@@ -393,7 +393,7 @@ StyledLabel#topicLabel {
 
 
 /* Topic Box */
-StyledLabel#topicLabel { background: palette(base);  font-family: consolas; }
+StyledLabel#topicLabel { background: #282a36;  font-family: consolas; }
 
 /* Buffer / Channel List */
 /**
@@ -471,7 +471,7 @@ ChatLine::timestamp {
 }
 
 ChatLine::url {
-    foreground: palette(link);
+    foreground: #ff79c6;
     //font-style: underline; // Uncomment if you always want an underline on links.
 }
 
@@ -578,7 +578,7 @@ BufferViewDock[active=true] {
     /* The circle is hardcoded into the title. */
     /* Color only changes on a refresh (F5) (so it's pointless). */
     /* Also colors the border in Breeze. */
-    //color: palette(highlight);
+    //color: #44475a;
 }
 
 /*
@@ -587,5 +587,5 @@ BufferViewDock[active=true] {
 */
 
 QWidget {
-    color: #6272a4;
+    color: white;
 }
