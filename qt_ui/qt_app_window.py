@@ -140,7 +140,7 @@ class AppWindow(QMainWindow):
         else:
             self.terminal_dock.show()
 
-    def find_in_project(self, search_text):
+    def find_in_project(self, search_text, options):
         if not search_text:
             return
 
@@ -152,28 +152,28 @@ class AppWindow(QMainWindow):
 
         root_path = self.fs_model.rootPath()
         try:
-            # Use ripgrep for efficient searching
-            # -n: show line number
-            # -H: show file name
-            # --with-filename: always show filename
-            # --no-heading: don't group matches by file
-            # --line-buffered: print results as they are found
-            command = ["rg", "-n", "-H", "--with-filename", "--no-heading", "--line-buffered", search_text, root_path]
+            command = ["rg", "-n", "-H", "--with-filename", "--no-heading", "--line-buffered"]
+            if not options.get("case_sensitive"):
+                command.append("-i")
+            if options.get("whole_words"):
+                command.append("-w")
+            if not options.get("regex"):
+                command.append("-F") # Fixed strings
+
+            command.extend([search_text, root_path])
+            
             process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
             for line in process.stdout:
-                # ripgrep output format: "filename:line_number:match"
                 parts = line.strip().split(':', 2)
                 if len(parts) == 3:
-                    filepath = parts[0]
-                    line_number = parts[1]
-                    content = parts[2]
+                    filepath, line_number, content = parts
                     file_item = QStandardItem(filepath)
                     line_item = QStandardItem(line_number)
                     content_item = QStandardItem(content)
                     model.appendRow([file_item, line_item, content_item])
             process.wait()
-            if process.returncode != 0 and process.returncode != 1: # 0 for success, 1 for no matches
+            if process.returncode != 0 and process.returncode != 1:
                 stderr_output = process.stderr.read()
                 print(f"Error during ripgrep search: {stderr_output}")
 
@@ -190,7 +190,6 @@ class AppWindow(QMainWindow):
             file_path = file_path_item.text()
             line_number = int(line_number_item.text())
             self.open_path(file_path)
-            # Find the editor for the opened file
             for i in range(self.tab_widget.count()):
                 if self.open_tabs.get(i) == file_path:
                     editor = self.tab_widget.widget(i)
@@ -210,7 +209,6 @@ class AppWindow(QMainWindow):
             self.open_path(path)
 
     def open_path(self, path):
-        # Check if the file is already open
         for i in range(self.tab_widget.count()):
             if self.open_tabs.get(i) == path:
                 self.tab_widget.setCurrentIndex(i)
@@ -277,16 +275,17 @@ class AppWindow(QMainWindow):
         guidance = self.ai_service.get_socratic_guidance(prompt, code)
         self.ai_output_console.setText(guidance)
 
-    def find_next(self, search_text):
+    def find_next(self, search_text, options):
         current_editor = self.tab_widget.currentWidget()
         if isinstance(current_editor, CodeEditor):
-            current_editor.find_next_in_editor(search_text)
-    def replace_text(self, search_text, replace_text):
-        current_editor = self.tab_widget.currentWidget()
-        if isinstance(current_editor, CodeEditor):
-            current_editor.replace_in_editor(search_text, replace_text)
+            current_editor.find_next_in_editor(search_text, options)
 
-    def replace_all_text(self, search_text, replace_text):
+    def replace_text(self, search_text, replace_text, options):
         current_editor = self.tab_widget.currentWidget()
         if isinstance(current_editor, CodeEditor):
-            current_editor.replace_all_in_editor(search_text, replace_text)
+            current_editor.replace_in_editor(search_text, replace_text, options)
+
+    def replace_all_text(self, search_text, replace_text, options):
+        current_editor = self.tab_widget.currentWidget()
+        if isinstance(current_editor, CodeEditor):
+            current_editor.replace_all_in_editor(search_text, replace_text, options)
