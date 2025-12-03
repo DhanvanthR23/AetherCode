@@ -2,6 +2,17 @@ from PyQt6.Qsci import QsciScintilla, QsciLexerPython
 from PyQt6.QtGui import QFont, QColor
 from PyQt6.QtCore import QTimer
 import pycodestyle
+import jedi
+
+class CustomChecker(pycodestyle.Checker):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.errors = []
+
+    def report_error(self, line_number, offset, msg, check):
+        code = msg.split(" ")[0]
+        self.errors.append((line_number, offset, msg, code))
+
 
 class CodeEditor(QsciScintilla):
     INDICATOR_ERROR = 8
@@ -38,9 +49,14 @@ class CodeEditor(QsciScintilla):
         self.setAutoIndent(True)
 
         # Autocompletion
-        self.setAutoCompletionSource(QsciScintilla.AutoCompletionSource.AcsAll)
+        self.setAutoCompletionSource(QsciScintilla.AutoCompletionSource.AcsAPIs)
         self.setAutoCompletionCaseSensitivity(False)
         self.setAutoCompletionThreshold(1)
+        self.completion_timer = QTimer(self)
+        self.completion_timer.setInterval(500) # 500 ms delay
+        self.completion_timer.setSingleShot(True)
+        self.completion_timer.timeout.connect(self.show_completions)
+        self.textChanged.connect(self.request_completions)
 
         # Caret
         self.setCaretLineVisible(True)
@@ -73,14 +89,40 @@ class CodeEditor(QsciScintilla):
         self.clear_all_indicators()
         
         lines = self.text().splitlines(True)
-        checker = pycodestyle.Checker(filename='dummy.py', lines=lines)
         
-        for line_number, offset, msg, _ in checker.check_all():
-            code = msg.split(' ')[0]
+        # We need to use a custom checker to capture the errors
+        # because pycodestyle.Checker prints them to stdout by default.
+        checker = CustomChecker(filename=None, lines=lines)
+        checker.check_all()
+
+        for line_number, offset, msg, code in checker.errors:
             if code.startswith('E'):
                 self.fillIndicatorRange(line_number - 1, offset, line_number - 1, self.lineLength(line_number - 1), self.INDICATOR_ERROR)
             elif code.startswith('W'):
                 self.fillIndicatorRange(line_number - 1, offset, line_number - 1, self.lineLength(line_number - 1), self.INDICATOR_WARNING)
+
+    def request_completions(self):
+        self.completion_timer.start()
+
+    def show_completions(self):
+        line, index = self.getCursorPosition()
+        text = self.text()
+
+        # Assuming self.path is available. We need to set it when a file is opened.
+        path = getattr(self, 'path', None)
+
+        script = jedi.Script(code=text, path=path)
+        completions = script.complete(line=line + 1, column=index)
+
+        if completions:
+            # Check if the autocompletion list is already active
+            if not self.isListActive():
+                # QScintilla's API for showing completions is a bit tricky.
+                # We need to calculate the start of the word to be completed.
+                word_start_pos = self.positionFromLineIndex(line, index) - len(completions[0].name_with_symbols) + len(completions[0].complete)
+                
+                completion_list = [c.name for c in completions]
+                self.showUserList(1, completion_list)
 
     def clear_all_indicators(self):
         self.clearIndicatorRange(0, 0, self.lines() - 1, self.lineLength(self.lines() - 1), self.INDICATOR_ERROR)

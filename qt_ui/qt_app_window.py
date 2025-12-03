@@ -215,6 +215,7 @@ class AppWindow(QMainWindow):
                 return
 
         editor = CodeEditor()
+        editor.path = path
         try:
             with open(path, 'r') as f:
                 editor.setText(f.read())
