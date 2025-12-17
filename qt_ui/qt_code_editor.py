@@ -141,7 +141,7 @@ class CodeEditor(QsciScintilla):
             True  # wrap
         )
 
-    def find_next(self, search_text, options):
+    def find_next_in_editor(self, search_text, options):
         if not search_text:
             return
         if self._last_search_text != search_text or self._last_search_options != options:
@@ -153,10 +153,17 @@ class CodeEditor(QsciScintilla):
         if not search_text:
             return
 
-        if self.hasSelectedText() and self.selectedText() == search_text:
+        case_sensitive = options.get("case_sensitive", False)
+        selected_text = self.selectedText()
+
+        text_to_compare_selected = selected_text if case_sensitive else selected_text.lower()
+        text_to_compare_search = search_text if case_sensitive else search_text.lower()
+
+        if self.hasSelectedText() and text_to_compare_selected == text_to_compare_search:
             self.replace(replace_text)
+            self.find_next_in_editor(search_text, options)
         else:
-            self.find_first(search_text, options)
+            self.find_next_in_editor(search_text, options)
 
     def replace_all_in_editor(self, search_text, replace_text, options):
         if not search_text:
@@ -173,40 +180,3 @@ class CodeEditor(QsciScintilla):
             self.replace(replace_text)
 
         self.endUndoAction()
-    
-    def find_next_in_editor(self, search_text, options):
-        self.find_next(search_text, options)
-        if not search_text:
-            return
-        if self._last_search_text != search_text or self._last_search_options != options:
-            self.find_first(search_text, options)
-        else:
-            self.findNext()
-
-    def replace_in_editor(self, search_text, replace_text, options):
-        if not search_text:
-            return
-
-        if self.hasSelectedText() and self.selectedText() == search_text:
-            self.replace(replace_text)
-        else:
-            self.find_first(search_text, options)
-
-    def replace_all_in_editor(self, search_text, replace_text, options):
-        if not search_text:
-            return
-
-        self.beginUndoAction()
-        self.setCursorPosition(0, 0)
-        
-        re = options.get("regex", False)
-        cs = options.get("case_sensitive", False)
-        wo = options.get("whole_words", False)
-
-        while self.findFirst(search_text, re, cs, wo, False, True, *self.getCursorPosition()):
-            self.replace(replace_text)
-
-        self.endUndoAction()
-    
-    def find_next_in_editor(self, search_text, options):
-        self.find_next(search_text, options)

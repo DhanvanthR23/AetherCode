@@ -17,6 +17,10 @@ class AppWindow(QMainWindow):
         self.resize(1200, 800)
 
         self.ai_service = AIService()
+        self.ai_service.generation_finished.connect(self.on_generation_finished)
+        self.ai_service.guidance_finished.connect(self.on_guidance_finished)
+        self.ai_service.error.connect(self.on_ai_error)
+
         self.open_tabs = {}
 
         self.tab_widget = QTabWidget()
@@ -31,6 +35,21 @@ class AppWindow(QMainWindow):
         self.create_terminal_panel()
 
         self.show()
+
+    def on_generation_finished(self, generated_code):
+        self.ai_output_console.setText(generated_code)
+        self.generator_mode_button.setEnabled(True)
+        self.mentor_mode_button.setEnabled(True)
+
+    def on_guidance_finished(self, guidance):
+        self.ai_output_console.setText(guidance)
+        self.generator_mode_button.setEnabled(True)
+        self.mentor_mode_button.setEnabled(True)
+
+    def on_ai_error(self, error_message):
+        self.ai_output_console.setText(f"An error occurred: {error_message}")
+        self.generator_mode_button.setEnabled(True)
+        self.mentor_mode_button.setEnabled(True)
 
 
     def create_menu_bar(self):
@@ -190,12 +209,10 @@ class AppWindow(QMainWindow):
             file_path = file_path_item.text()
             line_number = int(line_number_item.text())
             self.open_path(file_path)
-            for i in range(self.tab_widget.count()):
-                if self.open_tabs.get(i) == file_path:
-                    editor = self.tab_widget.widget(i)
-                    if isinstance(editor, CodeEditor):
-                        editor.setCursorPosition(line_number - 1, 0)
-                        break
+            
+            editor = self.tab_widget.currentWidget()
+            if isinstance(editor, CodeEditor):
+                editor.setCursorPosition(line_number - 1, 0)
 
     def toggle_find_replace_panel(self):
         if self.find_replace_dock.isVisible():
@@ -209,19 +226,19 @@ class AppWindow(QMainWindow):
             self.open_path(path)
 
     def open_path(self, path):
-        for i in range(self.tab_widget.count()):
-            if self.open_tabs.get(i) == path:
-                self.tab_widget.setCurrentIndex(i)
-                return
+        if path in self.open_tabs:
+            editor = self.open_tabs[path]
+            self.tab_widget.setCurrentWidget(editor)
+            return
 
         editor = CodeEditor()
         editor.path = path
         try:
             with open(path, 'r') as f:
                 editor.setText(f.read())
-            index = self.tab_widget.addTab(editor, os.path.basename(path))
-            self.open_tabs[index] = path
-            self.tab_widget.setCurrentIndex(index)
+            self.tab_widget.addTab(editor, os.path.basename(path))
+            self.open_tabs[path] = editor
+            self.tab_widget.setCurrentWidget(editor)
         except Exception as e:
             print(f"Could not open file {path}: {e}")
 
@@ -231,29 +248,61 @@ class AppWindow(QMainWindow):
             self.open_path(file_name)
 
     def save_file(self):
-        current_index = self.tab_widget.currentIndex()
-        if current_index in self.open_tabs:
-            path = self.open_tabs[current_index]
-            editor = self.tab_widget.widget(current_index)
-            with open(path, 'w') as f:
+        editor = self.tab_widget.currentWidget()
+        if not isinstance(editor, CodeEditor):
+            return
+
+        path_to_save = None
+        for path, editor_widget in self.open_tabs.items():
+            if editor_widget == editor:
+                path_to_save = path
+                break
+        
+        if path_to_save:
+            with open(path_to_save, 'w') as f:
                 f.write(editor.text())
         else:
             self.save_file_as()
 
     def save_file_as(self):
-        current_index = self.tab_widget.currentIndex()
-        editor = self.tab_widget.widget(current_index)
-        if editor:
-            file_name, _ = QFileDialog.getSaveFileName(self, "Save File As")
-            if file_name:
-                with open(file_name, 'w') as f:
-                    f.write(editor.text())
-                self.open_tabs[current_index] = file_name
-                self.tab_widget.setTabText(current_index, os.path.basename(file_name))
+        editor = self.tab_widget.currentWidget()
+        if not isinstance(editor, CodeEditor):
+            return
+
+        file_name, _ = QFileDialog.getSaveFileName(self, "Save File As")
+        if file_name:
+            # Remove old path if it exists
+            old_path = None
+            for path, editor_widget in self.open_tabs.items():
+                if editor_widget == editor:
+                    old_path = path
+                    break
+            if old_path:
+                del self.open_tabs[old_path]
+
+            with open(file_name, 'w') as f:
+                f.write(editor.text())
+            
+            editor.path = file_name
+            self.open_tabs[file_name] = editor
+            current_index = self.tab_widget.indexOf(editor)
+            self.tab_widget.setTabText(current_index, os.path.basename(file_name))
 
     def close_tab(self, index):
-        if index in self.open_tabs:
-            del self.open_tabs[index]
+        widget = self.tab_widget.widget(index)
+        if not isinstance(widget, CodeEditor):
+            self.tab_widget.removeTab(index)
+            return
+
+        path_to_close = None
+        for path, editor_widget in self.open_tabs.items():
+            if editor_widget == widget:
+                path_to_close = path
+                break
+        
+        if path_to_close:
+            del self.open_tabs[path_to_close]
+        
         self.tab_widget.removeTab(index)
 
     def run_generator_mode(self):
@@ -262,9 +311,13 @@ class AppWindow(QMainWindow):
         if not isinstance(current_editor, CodeEditor):
             self.ai_output_console.setText("Please open a file to use the AI features.")
             return
+        
+        self.ai_output_console.setText("Generating code...")
+        self.generator_mode_button.setEnabled(False)
+        self.mentor_mode_button.setEnabled(False)
+        
         code = current_editor.text()
-        generated_code = self.ai_service.get_code_generation(prompt, code)
-        self.ai_output_console.setText(generated_code)
+        self.ai_service.get_code_generation(prompt, code)
 
     def run_mentor_mode(self):
         prompt = self.ai_prompt_input.toPlainText()
@@ -272,9 +325,13 @@ class AppWindow(QMainWindow):
         if not isinstance(current_editor, CodeEditor):
             self.ai_output_console.setText("Please open a file to use the AI features.")
             return
+
+        self.ai_output_console.setText("Getting guidance...")
+        self.generator_mode_button.setEnabled(False)
+        self.mentor_mode_button.setEnabled(False)
+
         code = current_editor.text()
-        guidance = self.ai_service.get_socratic_guidance(prompt, code)
-        self.ai_output_console.setText(guidance)
+        self.ai_service.get_socratic_guidance(prompt, code)
 
     def find_next(self, search_text, options):
         current_editor = self.tab_widget.currentWidget()
